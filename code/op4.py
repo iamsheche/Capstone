@@ -1,3 +1,5 @@
+# Sección de Import
+
 import cv2
 import numpy as np
 import face_recognition as fr
@@ -5,18 +7,28 @@ import os
 import random
 from datetime import datetime
 
+#  Directorio de imágenes 
 ruta = "images/"
 
+# Creación de listas que almacenarán los datos
 images = []
 clases = []
+
+# Creamos una variable que accede al directorio de imágenes
 lista = os.listdir(ruta)
 
 var1 = 100
 
 # Recorrer directorio de imágenes
 for x in lista:
+    
+    # Por cada ciclo, a la variable img se le asigna una imagen del directorio
     img = cv2.imread(f'{ruta}/{x}')
+
+    # Agregamos cada imagen a la lista 
     images.append(img)
+
+    
     clases.append(os.path.splitext(x)[0])
 
 def face(images):
@@ -29,7 +41,7 @@ def face(images):
 
 app = face(images)
 
-cam = cv2.VideoCapture('http://192.168.1.3:8080/video')
+cam = cv2.VideoCapture('http://192.168.1.6:8080/video')
 cam.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Ancho
 cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)  # Alto
 
@@ -65,7 +77,7 @@ while True:
 
             if var1 == minimo:
                 cv2.rectangle(frame, (xi, yi), (xf, yf), (r, g, b), 3)
-                cv2.rectangle(frame, (xi, yi - 35), (xf, yf), (r, g, b), cv2.FILLED)
+                cv2.rectangle(frame, (xi, yi - 35), (xf, yf), (r, g, b), 3)
                 cv2.putText(frame, name, (xi + 6, yf - 6), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
     cv2.imshow("Eyeshot", frame)
