@@ -1,20 +1,102 @@
+# Sección de Import
 import cv2
-import face_recognition
+import numpy as np
+import face_recognition as fr
 import os
+import random
+from datetime import datetime
+import time  # ¡Olvidé importar time!
 
-cam = cv2.VideoCapture('http://192.168.1.3:8080/video')
+# Directorio de imágenes 
+ruta = "images/"
+
+# Creación de listas que almacenarán los datos
+images = []
+clases = []
+
+# Creamos una variable que accede al directorio de imágenes
+lista = os.listdir(ruta)
+
+var1 = 100
+
+# Recorrer directorio de imágenes
+for x in lista:
+    
+    # Por cada ciclo, a la variable img se le asigna una imagen del directorio
+    img = cv2.imread(f'{ruta}/{x}')
+
+    # Agregamos cada imagen a la lista 
+    images.append(img)
+
+    
+    clases.append(os.path.splitext(x)[0])
+
+def face(images):
+    lista2 = []
+    for y in images:
+        y = cv2.cvtColor(y, cv2.COLOR_BGR2RGB)
+        cod = fr.face_encodings(y)[0]
+        lista2.append(cod)
+    return lista2
+
+app = face(images)
+
+cam = cv2.VideoCapture(0)
+cam.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Ancho
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)  # Alto
+
+# Variables para el control de FPS
+FPS = 30
+start_time = time.time()
 
 while True:
     ret, frame = cam.read()
+
     if not ret:
-        print("No se pudo obtener un frame de la cámara")
+        print("No se pudo encontrar la cámara")
         break
 
+    frame2 = cv2.resize(frame, (0, 0), None, 0.25, 0.25)
+    rgb = cv2.cvtColor(frame2, cv2.COLOR_BGR2RGB)
+    caras = fr.face_locations(rgb)
+    facescod = fr.face_encodings(rgb, caras)
 
-    key = cv2.waitKey(1)
-    if key == 27:
+    for x, y in zip(facescod, caras):
+        comp = fr.compare_faces(app, x)
+        similutd = fr.face_distance(app, x)
+        minimo = np.argmin(similutd)
+
+        if comp[minimo]:
+            name = clases[minimo].upper()
+            faceloc = y
+            yi, xf, yf, xi = faceloc
+            yi, xf, yf, xi = yi * 4, xf * 4, yf * 4, xi * 4
+
+            if var1 != minimo:
+                r = random.randrange(0, 255, 50)
+                g = random.randrange(0, 255, 50)
+                b = random.randrange(0, 255, 50)
+
+                var1 = minimo
+
+            if var1 == minimo:
+                cv2.rectangle(frame, (xi, yi), (xf, yf), (r, g, b), 3)
+                cv2.rectangle(frame, (xi, yi - 35), (xf, yf), (r, g, b), 3)
+                cv2.putText(frame, name, (xi + 6, yf - 6), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+    cv2.imshow("Eyeshot", frame)
+
+    # Temporización para alcanzar el FPS deseado
+    elapsed_time = time.time() - start_time
+    sleep_time = max(0, 1/FPS - elapsed_time)
+    time.sleep(sleep_time)
+
+    # Actualiza el tiempo de inicio para el siguiente ciclo
+    start_time = time.time()
+
+    off = cv2.waitKey(1)
+    if off == 27:
         break
-
 
 cam.release()
 cv2.destroyAllWindows()

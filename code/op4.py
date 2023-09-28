@@ -8,7 +8,8 @@ import random
 from datetime import datetime
 
 #  Directorio de imágenes 
-ruta = "images/"
+ruta = "C:\\Users\\shech\\OneDrive\\Documentos\\GitHub\\Capstone\\images"
+
 
 # Creación de listas que almacenarán los datos
 images = []
@@ -41,7 +42,7 @@ def face(images):
 
 app = face(images)
 
-cam = cv2.VideoCapture('http://192.168.1.6:8080/video')
+cam = cv2.VideoCapture(0)
 cam.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Ancho
 cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)  # Alto
 
