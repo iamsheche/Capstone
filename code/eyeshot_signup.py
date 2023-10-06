@@ -10,6 +10,21 @@ from PIL import Image, ImageTk
 import os
 import cv2
 import imutils
+from datetime import datetime
+
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
+from firebase_admin import storage
+
+cred = credentials.Certificate("servicesAK.json")
+firebase_admin.initialize_app(cred, {
+    "databaseURL": "https://capstone-308fc-default-rtdb.firebaseio.com/",
+    "storageBucket": "capstone-308fc.appspot.com"
+})
+
+
+
 
 
 
@@ -89,29 +104,29 @@ def camReg():
                                     bbox = face.location_data.relative_bounding_box
                                     if score >confThreshold:
 
+
+
                                         # Conversión coordenadas a píxeles
                                         xi, yi, anc, alt = bbox.xmin, bbox.ymin, bbox.width, bbox.height
-                                        xi , yi , anc , alt = int(xi * an), int(yi * al), int(anc * an), int(alt * al)
+                                        xi, yi, anc, alt = int(xi * an), int(yi * al), int(anc * an), int(alt * al)
 
-                                        # Offset en X
-                                        offsetan =  (offsetx/100)* anc
-                                        xi = int(xi-int(offsetan/2))
-                                        anc= int(anc + offsetan)
-                                        xf =xi + anc
+                                        # Ampliación de la región de captura
+                                        ampliacion_x = int(anc * (50 / 100))
+                                        ampliacion_y = int(alt * (50 / 100))
 
-                                        # Offset en Y
-                                        offsetal = (offsety / 100) * alt
-                                        yi = int(yi - offsetal)
-                                        alt = int(alt + offsetal)
+                                        # Nuevas coordenadas de la región de captura
+                                        xi -= ampliacion_x // 2
+                                        yi -= ampliacion_y // 2
+                                        anc += ampliacion_x
+                                        alt += ampliacion_y
+                                        xf = xi + anc
                                         yf = yi + alt
 
-
                                         # Control de error
-
-                                        if xi < 0: xi=0
-                                        if yi < 0: yi=0
-                                        if anc < 0: anc=0
-                                        if alt < 0: alt=0
+                                        xi = max(0, xi)
+                                        yi = max(0, yi)
+                                        anc = max(0, anc)
+                                        alt = max(0, alt)
 
                                         # Verificación
 
@@ -156,22 +171,65 @@ def camReg():
                                                 cv2.putText(frame, f'Parpadeo: {count}', (1050, 523), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
                                                 if count == 3:
+                                                    pix = frameSave[yi:yf, xi:xf]
                                                     alch, ansch, c = img_check_resized.shape
                                                     frame[530:530 + alch, 1130:1130 + ansch] = img_check_resized
-                                                    messagebox.showinfo("Verificación exitosa", "Verificación y registro exitoso: Puede cerrar el programa")
+                                                    # Toma de píxeles
+
+
 
                                                     # Toma de captura
 
                                                     if longitud1> 14 and longitud2> 14:
-                                                        # Toma de píxeles
-                                                        pix = frameSave[yi:yf, xi:xf]
-
-                                                        # Guardar caras
 
 
-                                                        cv2.imwrite(f'{OutFolderPathCara}/ {input_id}.jpg', pix)
 
-                                                        step=1
+                                                        # Convertir la imagen a bytes
+                                                        _, img_bytes = cv2.imencode('.jpg', pix)
+                                                        img_bytes = img_bytes.tobytes()
+
+                                                        # Configurar Firebase Storage
+                                                        bucket = storage.bucket()  # Obtener referencia al bucket
+
+                                                        # Nombre único para el blob en Firebase Storage
+                                                        blob_name = f"{input_id}_cara.jpg"
+
+                                                        # Obtener referencia al blob en Firebase Storage
+                                                        blob = bucket.blob(blob_name)
+
+                                                        # Subir la imagen desde el búfer de memoria al blob en Firebase Storage
+                                                        try:
+                                                            blob.upload_from_string(img_bytes,
+                                                                                    content_type='image/jpeg')
+                                                            print(
+                                                                f"Imagen {blob_name} subida correctamente a Firebase Storage.")
+                                                            step = 1
+                                                        except Exception as e:
+                                                            print(f"Error al subir la imagen a Firebase Storage: {e}")
+
+
+
+                                                            
+
+
+                                                        messagebox.showinfo("Verificación exitosa","Verificación y registro exitoso: Puede cerrar el programa")
+                                                        windows2.destroy()
+
+
+
+
+
+
+                                                        # ...
+                                                        
+
+
+                                                        # ...
+
+                                                        # ...
+
+
+
 
 
 
@@ -232,6 +290,25 @@ def SignUp():
             messagebox.showwarning("ID existente", "El usuario ya está registrado: Verifique ID")
         else:
             datos.extend([input_name, input_id, input_cargo, input_mail, input_antiguedad])
+
+            # Obtener la fecha y hora actuales
+            hora_conexion = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # Guardar datos en Realtime Database
+            data = {
+                'name': input_name,
+                'id': input_id,
+                'cargo': input_cargo,
+                'mail': input_mail,
+                'antiguedad': input_antiguedad,
+                'hora_conexion': hora_conexion
+            }
+
+            # Obtener una referencia a la base de datos
+            ref = db.reference('Users')
+
+            # Crear una nueva entrada bajo 'usuarios' con el ID como clave
+            ref.child(input_id).set(data)
             messagebox.showinfo("Registro completado", "El registro se ha completado con éxito")
 
             # Exportar datos
