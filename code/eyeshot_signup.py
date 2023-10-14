@@ -16,17 +16,13 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
 from firebase_admin import storage
+import sys
 
 cred = credentials.Certificate("servicesAK.json")
 firebase_admin.initialize_app(cred, {
     "databaseURL": "https://capstone-308fc-default-rtdb.firebaseio.com/",
     "storageBucket": "capstone-308fc.appspot.com"
 })
-
-
-
-
-
 
 
 def camReg():
@@ -56,13 +52,13 @@ def camReg():
             listaCoordenadas = []
             if resultado.multi_face_landmarks:
                 for faceLms in resultado.multi_face_landmarks:
-                    mpDraw.draw_landmarks(frame, faceLms, FacemeshObject.FACEMESH_TESSELATION, configDraw , configDraw)
+                    mpDraw.draw_landmarks(frame, faceLms, FacemeshObject.FACEMESH_TESSELATION, configDraw, configDraw)
 
                     # Extraer coordenadas
                     for id, puntos in enumerate(faceLms.landmark):
 
-                        al,an, c = frame.shape
-                        x,y = int(puntos.x * an), int(puntos.y * al)
+                        al, an, c = frame.shape
+                        x, y = int(puntos.x * an), int(puntos.y * al)
                         px.append(x)
                         py.append(y)
                         listaCoordenadas.append((id, x, y))
@@ -70,14 +66,14 @@ def camReg():
                         # 468 Total
                         if len(listaCoordenadas) == 468:
                             # Puntos ojo derecho
-                            x1,y1 = listaCoordenadas[145][1:]
+                            x1, y1 = listaCoordenadas[145][1:]
                             x2, y2 = listaCoordenadas[159][1:]
                             longitud1 = math.hypot(x1 - x2, y1 - y2)
 
                             # Puntos ojo izquierdo
-                            x3,y3 = listaCoordenadas[374][1:]
-                            x4,y4 = listaCoordenadas[386][1:]
-                            longitud2  =  math.hypot(x4 - x3, y4 - y3)
+                            x3, y3 = listaCoordenadas[374][1:]
+                            x4, y4 = listaCoordenadas[386][1:]
+                            longitud2 = math.hypot(x4 - x3, y4 - y3)
 
                             # Parietal Derecho
                             x5, y5 = listaCoordenadas[139][1:]
@@ -88,7 +84,6 @@ def camReg():
                             x7, y7 = listaCoordenadas[70][1:]
                             # Ceja izquierda
                             x8, y8 = listaCoordenadas[300][1:]
-
 
                             # Detección de rostros
 
@@ -102,9 +97,7 @@ def camReg():
                                     score = face.score
                                     score = score[0]
                                     bbox = face.location_data.relative_bounding_box
-                                    if score >confThreshold:
-
-
+                                    if score > confThreshold:
 
                                         # Conversión coordenadas a píxeles
                                         xi, yi, anc, alt = bbox.xmin, bbox.ymin, bbox.width, bbox.height
@@ -137,7 +130,7 @@ def camReg():
 
                                             # IMG Verificacion
                                             als0, ans0, c = img_verificacion.shape
-                                            frame[50:50+als0, 50:50+ans0] = img_verificacion
+                                            frame[50:50 + als0, 50:50 + ans0] = img_verificacion
 
                                             # IMG Mirar Cámara
                                             img_mirar_resized = cv2.resize(img_mirar, (250, 300))
@@ -151,24 +144,24 @@ def camReg():
                                             als2, ans2, c = img_parpadear_resized.shape
                                             frame[350:350 + als2, 1030:1030 + ans2] = img_parpadear_resized
 
-
                                             # Mirarcentro
 
-                                            if x7 > x5 and x8<x6:
+                                            if x7 > x5 and x8 < x6:
                                                 img_check_resized = cv2.resize(img_check, (55, 100))
 
                                                 alch, ansch, c = img_check_resized.shape
                                                 frame[145:145 + alch, 1130:1130 + ansch] = img_check_resized
 
                                                 # Conteo parpadeos
-                                                if longitud1<=10 and longitud2<=10 and parpadeo== False:
+                                                if longitud1 <= 10 and longitud2 <= 10 and parpadeo == False:
                                                     count += 1
                                                     parpadeo = True
 
-                                                elif longitud1>10 and longitud2>10 and parpadeo==True:
+                                                elif longitud1 > 10 and longitud2 > 10 and parpadeo == True:
 
                                                     parpadeo = False
-                                                cv2.putText(frame, f'Parpadeo: {count}', (1050, 523), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                                                cv2.putText(frame, f'Parpadeo: {count}', (1050, 523),
+                                                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
                                                 if count == 3:
                                                     pix = frameSave[yi:yf, xi:xf]
@@ -176,13 +169,9 @@ def camReg():
                                                     frame[530:530 + alch, 1130:1130 + ansch] = img_check_resized
                                                     # Toma de píxeles
 
-
-
                                                     # Toma de captura
 
-                                                    if longitud1> 14 and longitud2> 14:
-
-
+                                                    if longitud1 > 14 and longitud2 > 14:
 
                                                         # Convertir la imagen a bytes
                                                         _, img_bytes = cv2.imencode('.jpg', pix)
@@ -192,7 +181,7 @@ def camReg():
                                                         bucket = storage.bucket()  # Obtener referencia al bucket
 
                                                         # Nombre único para el blob en Firebase Storage
-                                                        blob_name = f"{input_id}_cara.jpg"
+                                                        blob_name = f"caras/{input_id}.jpg"
 
                                                         # Obtener referencia al blob en Firebase Storage
                                                         blob = bucket.blob(blob_name)
@@ -207,22 +196,11 @@ def camReg():
                                                         except Exception as e:
                                                             print(f"Error al subir la imagen a Firebase Storage: {e}")
 
-
-
-                                                            
-
-
-                                                        messagebox.showinfo("Verificación exitosa","Verificación y registro exitoso: Puede cerrar el programa")
+                                                        messagebox.showinfo("Verificación exitosa",
+                                                                            "Verificación y registro exitoso: Puede cerrar el programa")
                                                         windows2.destroy()
 
-
-
-
-
-
                                                         # ...
-                                                        
-
 
                                                         # ...
 
@@ -243,18 +221,11 @@ def camReg():
                                             alli, anli, c = img_exito.shape
                                             frame[50:50 + alli, 50:50 + anli] = img_exito
 
-
-
-
                                         # Dibujar marco
 
-                                        #cv2.rectangle(frame, (xi, yi, anc, alt), (255, 255, 255), 2)
+                                        # cv2.rectangle(frame, (xi, yi, anc, alt), (255, 255, 255), 2)
 
-
-
-
-                            #cv2.circle(frame, (x1, y1), 5, (0, 0, 255), cv2.FILLED)
-
+                            # cv2.circle(frame, (x1, y1), 5, (0, 0, 255), cv2.FILLED)
 
         # Conversión a vídeo
         im = Image.fromarray(frame)
@@ -268,6 +239,7 @@ def camReg():
         messagebox.showwarning("Error", "No hay cámara")
         if cap is not None:
             cap.release()
+
 
 def SignUp():
     global EntryName, EntryID, EntryCargo, EntryMail, EntryAntiguedad, cap, lblVideo, windows2, input_id
@@ -283,7 +255,8 @@ def SignUp():
     if not all([input_name, input_id, input_cargo, input_mail, input_antiguedad]):
         messagebox.showwarning("Campos vacíos", "Los campos no pueden estar vacíos")
     else:
-        lista_usuarios = os.listdir(PathUserVerif)
+        lista_usuarios = db.reference('Users').get().keys()
+
         lista = [x.split('.')[0].split()[-1] for x in lista_usuarios]
 
         if input_id in lista:
@@ -297,11 +270,14 @@ def SignUp():
             # Guardar datos en Realtime Database
             data = {
                 'name': input_name,
-                'id': input_id,
+                #'id': input_id,
                 'cargo': input_cargo,
                 'mail': input_mail,
                 'antiguedad': input_antiguedad,
-                'hora_conexion': hora_conexion
+                "total_attendance": 0,
+                'last_attendance_time': hora_conexion
+
+
             }
 
             # Obtener una referencia a la base de datos
@@ -340,22 +316,22 @@ def SignUp():
             camReg()
 
 
-
-
-
 # Path
-OutFolderPathUser = "C:/Users/shech/OneDrive/Documentos/GitHub/Capstone/DB/usuarios"
-PathUserVerif = "C:/Users/shech/OneDrive/Documentos/GitHub/Capstone/DB/usuarios/"
-OutFolderPathCara = "C:/Users/shech/OneDrive/Documentos/GitHub/Capstone/DB/caras"
+# "./files/data.txt.py"
 
+
+
+OutFolderPathUser = "../DB/usuarios"
+PathUserVerif = "../DB/usuarios/"
+OutFolderPathCara = "../DB/caras"
 
 # Lectura de imágenes
 
-img_verificacion = cv2.imread("C:/Users/shech/OneDrive/Documentos/GitHub/Capstone/images/VERIFICACION.png")
-img_mirar = cv2.imread("C:/Users/shech/OneDrive/Documentos/GitHub/Capstone/images/MIRARCAMARA.png")
-img_parpadear = cv2.imread("C:/Users/shech/OneDrive/Documentos/GitHub/Capstone/images/PARPADEAR.png")
-img_check = cv2.imread("C:/Users/shech/OneDrive/Documentos/GitHub/Capstone/images/check.png")
-img_exito = cv2.imread("C:/Users/shech/OneDrive/Documentos/GitHub/Capstone/images/VERIFICACIONEXITOSA.png")
+img_verificacion = cv2.imread("../images/VERIFICACION.png")
+img_mirar = cv2.imread("../images/MIRARCAMARA.png")
+img_parpadear = cv2.imread("../images/PARPADEAR.png")
+img_check = cv2.imread("../images/check.png")
+img_exito = cv2.imread("../images/VERIFICACIONEXITOSA.png")
 
 # Creación de variables
 
@@ -379,8 +355,7 @@ configDraw = mpDraw.DrawingSpec(thickness=2, circle_radius=2)
 # Malla Facial
 
 FacemeshObject = mp.solutions.face_mesh
-FaceMesh =  FacemeshObject.FaceMesh(max_num_faces=1)
-
+FaceMesh = FacemeshObject.FaceMesh(max_num_faces=1)
 
 # Detector de  rostros
 
@@ -396,7 +371,11 @@ windows.title("EyeShot Sign Up")
 windows.geometry("1280x720")
 
 # Fondo GUI
-fondo = PhotoImage(file="C:/Users/shech/OneDrive/Documentos/GitHub/Capstone/images/EYESHOT SIGN UP TEMPLATE.png")
+#fondo = PhotoImage(file="C:/Users/shech/OneDrive/Documentos/GitHub/Capstone/images/EYESHOT SIGN UP TEMPLATE.png")
+
+ruta_imagen = "../images/EYESHOT SIGN UP TEMPLATE.png"
+fondo = PhotoImage(file=ruta_imagen)
+
 background = Label(windows, image=fondo, text="Sign Up")
 background.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -422,13 +401,13 @@ InputAntiguedad = Entry(windows, textvariable=EntryAntiguedad)
 InputAntiguedad.place(x=205, y=630, width=250, height=30)
 
 # Botón de registro
-imagenButton = PhotoImage(file="C:/Users/shech/OneDrive/Documentos/GitHub/Capstone/images/AÑADIR EMPLEADO.png")
+
+ruta_imagen2 = "../images/AÑADIR EMPLEADO.png"
+#imagenButton = PhotoImage(file="C:/Users/shech/OneDrive/Documentos/GitHub/Capstone/images/AÑADIR EMPLEADO.png")
+imagenButton = PhotoImage(file=ruta_imagen2)
+
 btn = Button(windows, image=imagenButton, text="SignUp", command=SignUp)
 btn.place(x=800, y=634, width=250, height=50)
 
 # Abrir ventana
 windows.mainloop()
-
-
-
-
