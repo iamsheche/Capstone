@@ -288,8 +288,8 @@ def SignUp():
             messagebox.showinfo("Registro completado", "El registro se ha completado con éxito")
 
             # Exportar datos
-            with open(PathUserVerif + f"{input_name} {input_id}.txt", "w") as exp:
-                exp.write(", ".join(datos))
+            #with open(PathUserVerif + f"{input_name} {input_id}.txt", "w") as exp:
+              #  exp.write(", ".join(datos))
 
             # Reset de formulario
             EntryName.set('')
@@ -321,9 +321,9 @@ def SignUp():
 
 
 
-OutFolderPathUser = "../DB/usuarios"
-PathUserVerif = "../DB/usuarios/"
-OutFolderPathCara = "../DB/caras"
+#OutFolderPathUser = "../DB/usuarios"
+#PathUserVerif = "../DB/usuarios/"
+#OutFolderPathCara = "../DB/caras"
 
 # Lectura de imágenes
 
